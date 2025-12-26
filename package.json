@@ -1,0 +1,70 @@
+{
+  "name": "version-info",
+  "version": "0.0.0",
+  "author": {
+    "name": "Dominik Hladík",
+    "email": "dominik.hladik@seznam.cz",
+    "url": "https://github.com/Celtian"
+  },
+  "license": "MIT",
+  "private": false,
+  "description": "Generate version info from package.json for TypeScript projects",
+  "scripts": {
+    "build": "zig build",
+    "start": "zig build run",
+    "test": "zig build test",
+    "clean": "rimraf zig-out dist",
+    "prepare": "husky",
+    "copy-files": "copyfiles -u 2 zig-out/bin/version_info dist/bin && copyfiles README.md LICENSE dist",
+    "script:package-npm": "yarn tsx ./scripts/package-npm.ts",
+    "script:package-github": "yarn tsx ./scripts/package-github.ts",
+    "version": "auto-changelog -p && git add CHANGELOG.md",
+    "postversion": "git push && git push --follow-tags",
+    "publish:beta": "yarn && yarn build && npm publish --folder dist --tag beta",
+    "release:beta": "npm version prerelease -m \"chore(update): prelease %s β\"",
+    "release:patch": "git checkout master && npm version patch -m \"chore(update): patch release %s 🐛 \"",
+    "release:minor": "git checkout master && npm version minor -m \"chore(update): release %s 🚀\"",
+    "release:major": "git checkout master && npm version major -m \"chore(update): major release %s 💥 \"",
+    "fix-vulnerabilities": "npx yarn-audit-fix && npx browserslist --update-db"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.2.0",
+    "@commitlint/config-conventional": "^20.2.0",
+    "@types/fs-extra": "^11.0.4",
+    "auto-changelog": "^2.5.0",
+    "copyfiles": "^2.4.1",
+    "fs-extra": "^11.3.3",
+    "husky": "^9.1.7",
+    "rimraf": "^6.1.2",
+    "tsx": "^4.21.0"
+  },
+  "bin": {
+    "version-info": "zig-out/bin/version_info"
+  },
+  "packageManager": "yarn@1.22.22",
+  "engines": {
+    "node": ">=24 <26",
+    "npm": "please-use-yarn"
+  },
+  "homepage": "https://github.com/Celtian/version-info",
+  "repository": {
+    "url": "git+https://github.com/Celtian/version-info.git",
+    "type": "git"
+  },
+  "bugs": {
+    "url": "https://github.com/Celtian/version-info/issues"
+  },
+  "keywords": [
+    "version",
+    "info",
+    "typescript",
+    "zig",
+    "package"
+  ],
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  }
+}
