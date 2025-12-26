@@ -13,7 +13,7 @@ permissions:
 jobs:
   install-and-build:
     name: 🛠️ Install & Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-slim
 
     steps:
       - name: 🗜️ Checkout
