@@ -89,23 +89,54 @@ pub fn getGitInfo(allocator: std.mem.Allocator) !?GitInfo {
         const ref_path = try std.fmt.allocPrint(allocator, ".git/{s}", .{ref_path_raw});
         defer allocator.free(ref_path);
 
-        // Read the commit hash from the ref file
-        const ref_file = std.fs.cwd().openFile(ref_path, .{}) catch |err| {
+        // Try to read the commit hash from the ref file
+        var commit_owned: []const u8 = undefined;
+
+        if (std.fs.cwd().openFile(ref_path, .{})) |ref_file| {
+            defer ref_file.close();
+            const commit_content = try ref_file.readToEndAlloc(allocator, 1024);
+            defer allocator.free(commit_content);
+            const commit = std.mem.trim(u8, commit_content, " \n\r\t");
+            commit_owned = try allocator.dupe(u8, commit);
+        } else |err| {
             if (err == error.FileNotFound) {
-                return null; // Ref file not found
+                // Ref file not found, try packed-refs
+                const packed_refs_file = std.fs.cwd().openFile(".git/packed-refs", .{}) catch |packed_err| {
+                    if (packed_err == error.FileNotFound) {
+                        return null; // Neither individual ref nor packed-refs found
+                    }
+                    return packed_err;
+                };
+                defer packed_refs_file.close();
+
+                const packed_content = try packed_refs_file.readToEndAlloc(allocator, 1024 * 1024);
+                defer allocator.free(packed_content);
+
+                // Search for the ref in packed-refs format: "<commit> <ref>\n"
+                var lines = std.mem.splitScalar(u8, packed_content, '\n');
+                while (lines.next()) |line| {
+                    if (line.len == 0 or line[0] == '#' or line[0] == '^') continue;
+
+                    var parts = std.mem.splitScalar(u8, line, ' ');
+                    const commit_hash = parts.next() orelse continue;
+                    const ref_name = parts.next() orelse continue;
+
+                    if (std.mem.eql(u8, ref_name, ref_path_raw)) {
+                        const commit = std.mem.trim(u8, commit_hash, " \n\r\t");
+                        commit_owned = try allocator.dupe(u8, commit);
+                        break;
+                    }
+                } else {
+                    return null; // Ref not found in packed-refs
+                }
+            } else {
+                return err;
             }
-            return err;
-        };
-        defer ref_file.close();
-
-        const commit_content = try ref_file.readToEndAlloc(allocator, 1024);
-        defer allocator.free(commit_content);
-
-        const commit = std.mem.trim(u8, commit_content, " \n\r\t");
+        }
 
         return GitInfo{
             .branch = try allocator.dupe(u8, branch),
-            .commit = try allocator.dupe(u8, commit),
+            .commit = commit_owned,
         };
     } else {
         // Detached HEAD state - HEAD contains the commit hash directly
