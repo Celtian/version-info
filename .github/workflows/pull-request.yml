@@ -4,7 +4,7 @@ name: Test PR
 jobs:
   install-and-test:
     name: 🛠️ Install & Test
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
 
     steps:
       - name: 🗜️ Checkout
