@@ -4,7 +4,7 @@ inputs:
   caching:
     description: Whether to cache dependencies or not
     required: false
-    default: 'true'
+    default: "true"
 outputs:
   used-cache:
     description: Whether the cache was used
@@ -30,10 +30,4 @@ runs:
       run: |
         yarn install --frozen-lockfile
         echo "cache='${{ inputs.caching }}'" >> $GITHUB_OUTPUT
-      shell: bash
-
-    - name: Postinstall
-      if: steps.cache.outputs.cache-hit == 'true' && inputs.caching == 'true'
-      id: postinstall
-      run: yarn postinstall
       shell: bash
